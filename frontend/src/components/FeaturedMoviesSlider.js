@@ -126,6 +126,28 @@ const FeaturedMoviesSlider = ({ movies = [] }) => {
   }
 
   const currentMovie = filteredMovies.length > 0 ? filteredMovies[currentIndex] : backgroundMovies[0];
+  const backgroundMovie = backgroundMovies[currentIndex] || backgroundMovies[0];
+  
+  // Get thumbnail for current movie - prefer trailer, then thumbnail_url, then video_url
+  const getThumbnail = (movie) => {
+    // First check if there's a trailer URL
+    if (movie.trailer_url && isYouTubeUrl(movie.trailer_url)) {
+      return getYouTubeThumbnail(movie.trailer_url);
+    }
+    // Then check thumbnail_url
+    if (movie.thumbnail_url) {
+      if (isYouTubeUrl(movie.thumbnail_url)) {
+        return getYouTubeThumbnail(movie.thumbnail_url);
+      }
+      return movie.thumbnail_url;
+    }
+    // Finally check video_url
+    if (movie.video_url && isYouTubeUrl(movie.video_url)) {
+      return getYouTubeThumbnail(movie.video_url);
+    }
+    return null;
+  };
+  
   return (
     <div className="relative bg-dark-800 overflow-hidden">
       {/* Language Filter Tabs */}
