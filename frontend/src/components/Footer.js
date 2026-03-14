@@ -18,9 +18,9 @@ const Footer = () => {
 
           {/* Links - responsive */}
           <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 text-gray-400 text-sm">
-            <a href="#" className="hover:text-white transition-colors whitespace-nowrap">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors whitespace-nowrap">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors whitespace-nowrap">Contact</a>
+            <a href="/privacy" className="hover:text-white transition-colors whitespace-nowrap">Privacy Policy</a>
+            <a href="/terms" className="hover:text-white transition-colors whitespace-nowrap">Terms of Service</a>
+            <a href="/contact" className="hover:text-white transition-colors whitespace-nowrap">Contact</a>
           </div>
 
           {/* Copyright */}
