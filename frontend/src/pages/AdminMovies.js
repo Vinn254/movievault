@@ -47,9 +47,12 @@ const AdminMovies = () => {
   const fetchMovies = async () => {
     try {
       const response = await moviesAPI.getAll({ limit: 100 });
-      setMovies(response.data.movies);
+      console.log('Movies response:', response.data);
+      setMovies(response.data.movies || []);
     } catch (error) {
       console.error('Error fetching movies:', error);
+      console.error('Error response:', error.response?.data);
+      setMovies([]);
     } finally {
       setLoading(false);
     }
@@ -168,7 +171,8 @@ const AdminMovies = () => {
       alert('Movie deleted successfully!');
     } catch (error) {
       console.error('Error deleting movie:', error);
-      alert('Failed to delete movie. Make sure you are logged in as admin.');
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      alert(`Failed to delete movie: ${errorMessage}`);
     }
   };
 
