@@ -41,7 +41,7 @@ async def fix_movie_free_get(movie_id: str, is_free: bool = True):
 # ==================== TRENDING ENDPOINTS ====================
 @router.get("/trending")
 async def get_trending():
-    """Get trending movies and series based on views and likes"""
+    """Get trending movies, series, and music based on views and likes"""
     db = Database.get_db()
     
     # Get trending movies (top 10 by views)
@@ -56,11 +56,31 @@ async def get_trending():
     ).sort("views", -1).limit(10)
     trending_series = await trending_series_cursor.to_list(length=10)
     
-    # Get top liked (top 10 by likes)
-    top_liked_cursor = db[MOVIES_COLLECTION].find(
+    # Get trending music (top 10 by likes)
+    trending_music_cursor = db[MUSIC_COLLECTION].find(
         {"is_active": True}
     ).sort("likes", -1).limit(10)
-    top_liked = await top_liked_cursor.to_list(length=10)
+    trending_music = await trending_music_cursor.to_list(length=10)
+    
+    # Get top liked (top 10 by likes - movies, series, and music combined)
+    top_liked_movies = await db[MOVIES_COLLECTION].find(
+        {"is_active": True}
+    ).sort("likes", -1).limit(10).to_list(length=10)
+    
+    top_liked_music = await db[MUSIC_COLLECTION].find(
+        {"is_active": True}
+    ).sort("likes", -1).limit(10).to_list(length=10)
+    
+    # Combine and sort by likes
+    all_top_liked = []
+    for m in top_liked_movies:
+        m["content_type"] = m.get("content_type", "movie")
+        all_top_liked.append(m)
+    for m in top_liked_music:
+        m["content_type"] = "music"
+        all_top_liked.append(m)
+    all_top_liked.sort(key=lambda x: x.get("likes", 0), reverse=True)
+    top_liked = all_top_liked[:10]
     
     return {
         "trending_movies": [
@@ -110,6 +130,26 @@ async def get_trending():
                 "dislikes": m.get("dislikes", 0)
             }
             for m in trending_series
+        ],
+        "trending_music": [
+            {
+                "id": m["_id"],
+                "title": m["title"],
+                "artist": m.get("artist"),
+                "album": m.get("album"),
+                "thumbnail_url": m.get("thumbnail_url"),
+                "audio_url": m.get("audio_url"),
+                "duration": m.get("duration"),
+                "genre": m.get("genre"),
+                "release_year": m.get("release_year"),
+                "price": m["price"],
+                "is_free": m.get("is_free", True),
+                "is_active": m.get("is_active", True),
+                "created_at": m["created_at"],
+                "views": m.get("views", 0),
+                "likes": m.get("likes", 0)
+            }
+            for m in trending_music
         ],
         "top_liked": [
             {
