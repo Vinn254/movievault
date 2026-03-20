@@ -56,20 +56,28 @@ async def get_trending():
     ).sort("views", -1).limit(10)
     trending_series = await trending_series_cursor.to_list(length=10)
     
-    # Get trending music (top 10 by likes)
-    trending_music_cursor = db[MUSIC_COLLECTION].find(
-        {"is_active": True}
-    ).sort("likes", -1).limit(10)
-    trending_music = await trending_music_cursor.to_list(length=10)
+    # Get trending music (top 10 by likes) - with error handling
+    try:
+        trending_music_cursor = db[MUSIC_COLLECTION].find(
+            {"is_active": True}
+        ).sort("likes", -1).limit(10)
+        trending_music = await trending_music_cursor.to_list(length=10)
+    except Exception as e:
+        print(f"Error fetching trending music: {e}")
+        trending_music = []
     
     # Get top liked (top 10 by likes - movies, series, and music combined)
     top_liked_movies = await db[MOVIES_COLLECTION].find(
         {"is_active": True}
     ).sort("likes", -1).limit(10).to_list(length=10)
     
-    top_liked_music = await db[MUSIC_COLLECTION].find(
-        {"is_active": True}
-    ).sort("likes", -1).limit(10).to_list(length=10)
+    try:
+        top_liked_music = await db[MUSIC_COLLECTION].find(
+            {"is_active": True}
+        ).sort("likes", -1).limit(10).to_list(length=10)
+    except Exception as e:
+        print(f"Error fetching top liked music: {e}")
+        top_liked_music = []
     
     # Combine and sort by likes
     all_top_liked = []
