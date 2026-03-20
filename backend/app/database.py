@@ -28,7 +28,13 @@ class Database:
 # Collections
 USERS_COLLECTION = "users"
 MOVIES_COLLECTION = "movies"
+MUSIC_COLLECTION = "music"
 PAYMENTS_COLLECTION = "payments"
 PURCHASES_COLLECTION = "purchases"
 REACTIONS_COLLECTION = "reactions"
 SUBSCRIPTIONS_COLLECTION = "subscriptions"
+SUBSCRIPTION_PLANS_COLLECTION = "subscription_plans"
+USER_SUBSCRIPTIONS_COLLECTION = "user_subscriptions"
+SERIES_COLLECTION = "series"
+SEASONS_COLLECTION = "seasons"
+EPISODES_COLLECTION = "episodes"

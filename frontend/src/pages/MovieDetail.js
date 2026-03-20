@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { moviesAPI, paymentsAPI } from '../services/api';
+import { moviesAPI, paymentsAPI, subscriptionAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { isStreamingSiteUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube';
 
@@ -18,9 +18,15 @@ const MovieDetail = () => {
   const [success, setSuccess] = useState('');
   const [checkoutRequestId, setCheckoutRequestId] = useState(null);
   const [polling, setPolling] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   useEffect(() => {
     fetchMovie();
+    fetchSubscriptionStatus();
+    fetchPlans();
   }, [id]);
 
   const fetchMovie = async () => {
@@ -31,6 +37,63 @@ const MovieDetail = () => {
       console.error('Error fetching movie:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSubscriptionStatus = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const response = await subscriptionAPI.getMyStatus();
+      setSubscriptionStatus(response.data);
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+    }
+  };
+
+  const fetchPlans = async () => {
+    try {
+      const response = await subscriptionAPI.getPlans();
+      setPlans(response.data.plans || []);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+    }
+  };
+
+  const handleSubscribe = async (planName) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!phone) {
+      setShowSubscriptionModal(true);
+      setSelectedPlan(planName);
+      return;
+    }
+
+    await processSubscriptionPayment(planName);
+  };
+
+  const processSubscriptionPayment = async (planName) => {
+    setError('');
+    setSuccess('');
+    setProcessingPayment(true);
+
+    try {
+      const paymentType = planName === 'yearly' ? 'yearly_subscription' : 'monthly_subscription';
+      const response = await paymentsAPI.initiate({
+        payment_type: paymentType,
+        phone_number: phone,
+      });
+      
+      setCheckoutRequestId(response.data.checkout_request_id);
+      setSuccess('Payment request sent! Check your phone and enter your M-Pesa PIN.');
+      setPolling(true);
+      pollPaymentStatus(response.data.checkout_request_id);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to initiate payment');
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -228,14 +291,19 @@ const MovieDetail = () => {
           {/* Purchase Section */}
           <div className="lg:col-span-1">
             <div className="card p-6 sticky top-24">
-              <div className="text-center mb-6">
-                <p className="text-gray-400 text-sm">Price</p>
-                {movie.is_free ? (
-                  <p className="font-display text-4xl font-bold text-accent-400">FREE</p>
-                ) : (
-                  <p className="font-display text-4xl font-bold text-white">KES {movie.price}</p>
-                )}
-              </div>
+              {/* Show watch button if free or user has subscription */}
+              {(movie.is_free || subscriptionStatus?.has_subscription) ? (
+                <Link
+                  to={`/stream/${id}`}
+                  className="block w-full btn btn-accent py-3 text-center"
+                >
+                  {movie.is_free ? 'Watch Free' : 'Watch Now'}
+                </Link>
+              ) : (
+                <div className="text-center mb-4">
+                  <p className="text-gray-400 mb-2">Subscribe to watch this content</p>
+                </div>
+              )}
 
               {error && (
                 <div className="mb-4 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400 text-sm">
@@ -249,64 +317,94 @@ const MovieDetail = () => {
                 </div>
               )}
 
-              {purchased || movie.is_free ? (
-                <Link
-                  to={`/stream/${id}`}
-                  className="block w-full btn btn-accent py-3 text-center"
-                >
-                  {movie.is_free ? 'Watch Free' : 'Watch Now'}
-                </Link>
-              ) : (
-                <form onSubmit={handlePayment}>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      M-Pesa Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="254XXXXXXXXX"
-                      className="input"
-                    />
-                    <p className="text-gray-500 text-xs mt-1">
-                      Enter number in format: 254XXXXXXXXX
-                    </p>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={processingPayment || polling}
-                    className="w-full btn btn-primary py-3"
-                  >
-                    {processingPayment ? (
-                      <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </span>
-                    ) : polling ? (
-                      <span>Waiting for payment...</span>
-                    ) : (
-                      `Pay KES ${movie.price} with M-Pesa`
-                    )}
-                  </button>
-                </form>
-              )}
-
               <div className="mt-4 text-center text-gray-500 text-sm">
                 {movie.is_free ? (
                   <p>Watch this movie for free</p>
+                ) : subscriptionStatus?.has_subscription ? (
+                  <p>✓ You have an active subscription</p>
                 ) : (
-                  <p>Secure payment powered by M-Pesa</p>
+                  <p>Subscribe to unlock all content</p>
+                )}
+              </div>
+
+              {/* Subscription Plans Section */}
+              <div className="mt-6 pt-6 border-t border-dark-700">
+                <h3 className="text-lg font-semibold text-white mb-4 text-center">Get Unlimited Access</h3>
+                
+                {subscriptionStatus?.has_subscription ? (
+                  <div className="text-center p-4 bg-green-500/20 rounded-lg">
+                    <p className="text-green-400 font-medium">✓ Active {subscriptionStatus.subscription_type} subscription</p>
+                    <p className="text-gray-400 text-sm">Expires: {new Date(subscriptionStatus.expires_at).toLocaleDateString()}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {plans.map((plan) => (
+                      <div key={plan._id} className="flex items-center justify-between p-3 bg-dark-700 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">{plan.display_name}</p>
+                          <p className="text-gray-400 text-sm">{plan.duration_days} days</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white font-bold">KES {plan.price}</p>
+                          <button
+                            onClick={() => handleSubscribe(plan.name)}
+                            disabled={processingPayment}
+                            className="text-primary-400 text-sm hover:text-primary-300"
+                          >
+                            Subscribe
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Subscription Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-4">Complete Subscription</h3>
+            <p className="text-gray-400 mb-4">Enter your M-Pesa phone number to subscribe</p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                M-Pesa Phone Number
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="254XXXXXXXXX"
+                className="input"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSubscriptionModal(false)}
+                className="flex-1 py-2 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowSubscriptionModal(false);
+                  processSubscriptionPayment(selectedPlan);
+                }}
+                disabled={!phone || processingPayment}
+                className="flex-1 btn btn-primary py-2"
+              >
+                Pay with M-Pesa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

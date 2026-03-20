@@ -16,6 +16,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminMovies from './pages/AdminMovies';
 import AdminUsers from './pages/AdminUsers';
 import Trailer from './pages/Trailer';
+import Music from './pages/Music';
+import TVSeries from './pages/TVSeries';
+import Trending from './pages/Trending';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -35,6 +38,9 @@ function App() {
               <Route path="/stream/:id" element={<Stream />} />
               <Route path="/trailer/:id" element={<Trailer />} />
               <Route path="/library" element={<MyLibrary />} />
+              <Route path="/music" element={<Music />} />
+              <Route path="/tv-series" element={<TVSeries />} />
+              <Route path="/trending" element={<Trending />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/movies" element={<AdminMovies />} />
               <Route path="/admin/users" element={<AdminUsers />} />

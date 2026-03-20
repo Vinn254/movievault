@@ -58,6 +58,39 @@ export const moviesAPI = {
   likeMovie: (movieId, reaction) => api.post('/api/movies/like', { movie_id: movieId, reaction }),
   subscribeMovie: (movieId) => api.post(`/api/movies/subscribe?movie_id=${movieId}`),
   getSubscriptions: () => api.get('/api/movies/subscriptions'),
+  getTrending: () => api.get('/api/trending'),
+  getFeatured: () => api.get('/api/featured'),
+};
+
+// Music API
+export const musicAPI = {
+  getAll: (params) => api.get('/api/music', { params }),
+  getById: (id) => api.get(`/api/music/${id}`),
+  create: (data) => api.post('/api/music', data),
+  like: (musicId, reaction) => api.post('/api/music/like', { music_id: musicId, reaction }),
+};
+
+// Series API
+export const seriesAPI = {
+  getSeasons: (seriesId) => api.get(`/api/series/${seriesId}/seasons`),
+  getEpisodes: (seasonId) => api.get(`/api/seasons/${seasonId}/episodes`),
+  streamEpisode: (episodeId) => api.get(`/api/episodes/${episodeId}/stream`),
+};
+
+// Subscription API
+export const subscriptionAPI = {
+  getPlans: () => api.get('/api/subscription/plans'),
+  getMyStatus: () => api.get('/api/subscription/my-status'),
+};
+
+// Add to Payments API for subscription
+export const paymentsAPIWithSubscription = {
+  ...paymentsAPI,
+  subscribe: (paymentType, phoneNumber) => 
+    api.post('/api/payments/initiate', { 
+      payment_type: paymentType,
+      phone_number: phoneNumber 
+    }),
 };
 
 // Payments API

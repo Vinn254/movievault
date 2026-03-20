@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import uuid
 
-from app.database import Database, PAYMENTS_COLLECTION, PURCHASES_COLLECTION, MOVIES_COLLECTION
+from app.database import Database, PAYMENTS_COLLECTION, PURCHASES_COLLECTION, MOVIES_COLLECTION, USER_SUBSCRIPTIONS_COLLECTION
 from app.schemas import PaymentInitiate, PaymentResponse, PaymentStatus
 from app.mpesa import mpesa_client
 from app.routes.auth import get_current_user
@@ -12,6 +12,83 @@ router = APIRouter(prefix="/api/payments", tags=["Payments"])
 
 # Purchase validity period (48 hours from payment)
 PURCHASE_VALIDITY_HOURS = 48
+
+# Subscription prices
+MONTHLY_PRICE = 500  # KSH
+YEARLY_PRICE = 5000  # KSH
+
+# Free trial period for free movies (24 hours)
+FREE_TRIAL_HOURS = 24
+
+async def initiate_subscription_payment(payment: PaymentInitiate, current_user: dict, phone: str):
+    """Handle subscription payment initiation"""
+    db = Database.get_db()
+    
+    # Determine price based on plan type
+    if payment.payment_type == "monthly_subscription":
+        amount = MONTHLY_PRICE
+        plan_name = "monthly"
+        duration_days = 30
+    elif payment.payment_type == "yearly_subscription":
+        amount = YEARLY_PRICE
+        plan_name = "yearly"
+        duration_days = 365
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid subscription type"
+        )
+    
+    # Check if user already has active subscription
+    existing_sub = await db[USER_SUBSCRIPTIONS_COLLECTION].find_one({
+        "user_id": current_user["_id"],
+        "expires_at": {"$gt": datetime.utcnow()}
+    })
+    
+    if existing_sub:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You already have an active {existing_sub['plan_name']} subscription"
+        )
+    
+    # Generate transaction ID
+    transaction_id = str(uuid.uuid4())
+    
+    try:
+        # Initiate STK push
+        response = mpesa_client.initiate_stk_push(
+            phone_number=phone,
+            amount=amount,
+            transaction_id=transaction_id
+        )
+        
+        # Store payment record
+        payment_record = {
+            "_id": transaction_id,
+            "user_id": current_user["_id"],
+            "phone_number": phone,
+            "amount": amount,
+            "payment_type": payment.payment_type,
+            "plan_name": plan_name,
+            "checkout_request_id": response.get("CheckoutRequestID"),
+            "status": "pending",
+            "mpesa_receipt_number": None,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        await db[PAYMENTS_COLLECTION].insert_one(payment_record)
+        
+        return {
+            "checkout_request_id": response.get("CheckoutRequestID"),
+            "customer_message": f"Payment initiated for {plan_name} subscription. Please check your phone."
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to initiate payment: {str(e)}"
+        )
 
 @router.post("/initiate", response_model=PaymentResponse)
 async def initiate_payment(payment: PaymentInitiate, current_user: dict = Depends(get_current_user)):
@@ -34,6 +111,17 @@ async def initiate_payment(payment: PaymentInitiate, current_user: dict = Depend
             detail="Invalid phone number format. Use format: 254XXXXXXXXX"
         )
     
+    # Handle subscription payments
+    if payment.payment_type in ["monthly_subscription", "yearly_subscription"]:
+        return await initiate_subscription_payment(payment, current_user, phone)
+    
+    # Handle movie payments
+    if not payment.movie_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Movie ID is required for movie payments"
+        )
+    
     # Get movie details
     movie = await db[MOVIES_COLLECTION].find_one({"_id": payment.movie_id, "is_active": True})
     if not movie:
@@ -42,11 +130,24 @@ async def initiate_payment(payment: PaymentInitiate, current_user: dict = Depend
             detail="Movie not found"
         )
     
-    # Check if this is a free movie - if so, grant access directly
+    # Check if this is a free movie - if so, grant 24-hour free trial
     is_free = movie.get("is_free", False)
     
     if is_free:
-        # For free movies, create a purchase record directly without payment
+        # Check if user already has a free trial for this movie
+        existing_trial = await db[PURCHASES_COLLECTION].find_one({
+            "user_id": current_user["_id"],
+            "movie_id": payment.movie_id,
+            "is_free_trial": True
+        })
+        
+        if existing_trial and existing_trial.get("expires_at") and existing_trial["expires_at"] > datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You already have an active free trial for this movie"
+            )
+        
+        # Grant 24-hour free trial
         purchase_id = str(uuid.uuid4())
         expires_at = datetime.utcnow() + timedelta(hours=PURCHASE_VALIDITY_HOURS)
         
@@ -168,20 +269,46 @@ async def payment_callback(callback_data: dict):
                 }
             )
             
-            # Create purchase record
-            purchase_id = str(uuid.uuid4())
-            expires_at = datetime.utcnow() + timedelta(hours=PURCHASE_VALIDITY_HOURS)
+            # Check if this is a subscription payment
+            payment_type = payment.get("payment_type")
             
-            purchase = {
-                "_id": purchase_id,
-                "user_id": payment["user_id"],
-                "movie_id": payment["movie_id"],
-                "payment_id": payment["_id"],
-                "created_at": datetime.utcnow(),
-                "expires_at": expires_at
-            }
-            
-            await db[PURCHASES_COLLECTION].insert_one(purchase)
+            if payment_type in ["monthly_subscription", "yearly_subscription"]:
+                # Create subscription record
+                plan_name = payment.get("plan_name", "monthly")
+                duration_days = 30 if plan_name == "monthly" else 365
+                
+                subscription_id = str(uuid.uuid4())
+                expires_at = datetime.utcnow() + timedelta(days=duration_days)
+                
+                subscription = {
+                    "_id": subscription_id,
+                    "user_id": payment["user_id"],
+                    "plan_id": plan_name,
+                    "plan_name": plan_name,
+                    "payment_id": payment["_id"],
+                    "started_at": datetime.utcnow(),
+                    "expires_at": expires_at,
+                    "is_active": True
+                }
+                
+                await db[USER_SUBSCRIPTIONS_COLLECTION].insert_one(subscription)
+                
+                return {"status": "success", "message": f"Subscription activated successfully! Valid for {duration_days} days."}
+            else:
+                # Create purchase record for movie
+                purchase_id = str(uuid.uuid4())
+                expires_at = datetime.utcnow() + timedelta(hours=PURCHASE_VALIDITY_HOURS)
+                
+                purchase = {
+                    "_id": purchase_id,
+                    "user_id": payment["user_id"],
+                    "movie_id": payment.get("movie_id"),
+                    "payment_id": payment["_id"],
+                    "created_at": datetime.utcnow(),
+                    "expires_at": expires_at
+                }
+                
+                await db[PURCHASES_COLLECTION].insert_one(purchase)
             
             return {"status": "success", "message": "Payment processed successfully"}
             

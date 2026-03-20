@@ -7,6 +7,8 @@ const GENRES = ['All', 'Action', 'Comedy', 'Drama', 'Horror', 'Romance', 'Sci-Fi
 
 const Home = () => {
   const [movies, setMovies] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [trendingSeries, setTrendingSeries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -16,6 +18,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchMovies();
+    fetchTrending();
   }, [searchQuery, selectedGenre]);
 
   const fetchMovies = async () => {
@@ -31,6 +34,16 @@ const Home = () => {
       console.error('Error fetching movies:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTrending = async () => {
+    try {
+      const response = await moviesAPI.getTrending();
+      setTrendingMovies(response.data.trending_movies || []);
+      setTrendingSeries(response.data.trending_series || []);
+    } catch (error) {
+      console.error('Error fetching trending:', error);
     }
   };
 
@@ -126,6 +139,52 @@ const Home = () => {
 
       {/* Featured Movies Slider */}
       <FeaturedMoviesSlider movies={movies} />
+
+      {/* Trending Movies Section */}
+      {trendingMovies.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <h2 className="text-2xl font-bold text-white">Trending Movies</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {trendingMovies.slice(0, 8).map((movie, index) => (
+              <div
+                key={movie.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <MovieCard movie={movie} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trending TV Series Section */}
+      {trendingSeries.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+            <h2 className="text-2xl font-bold text-white">Trending TV Series</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {trendingSeries.slice(0, 8).map((movie, index) => (
+              <div
+                key={movie.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <MovieCard movie={movie} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Movies Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
