@@ -292,7 +292,7 @@ const MovieDetail = () => {
           <div className="lg:col-span-1">
             <div className="card p-6 sticky top-24">
               {/* Show watch button if free or user has subscription */}
-              {(movie.is_free || subscriptionStatus?.has_subscription) ? (
+              {subscriptionStatus?.has_subscription || movie.is_free ? (
                 <Link
                   to={`/stream/${id}`}
                   className="block w-full btn btn-accent py-3 text-center"
@@ -321,7 +321,7 @@ const MovieDetail = () => {
                 {movie.is_free ? (
                   <p>Watch this movie for free</p>
                 ) : subscriptionStatus?.has_subscription ? (
-                  <p>✓ You have an active subscription</p>
+                  <p className="text-green-400">✓ You have an active subscription</p>
                 ) : (
                   <p>Subscribe to unlock all content</p>
                 )}
@@ -329,34 +329,28 @@ const MovieDetail = () => {
 
               {/* Subscription Plans Section */}
               <div className="mt-6 pt-6 border-t border-dark-700">
-                <h3 className="text-lg font-semibold text-white mb-4 text-center">Get Unlimited Access</h3>
-                
-                {subscriptionStatus?.has_subscription ? (
-                  <div className="text-center p-4 bg-green-500/20 rounded-lg">
-                    <p className="text-green-400 font-medium">✓ Active {subscriptionStatus.subscription_type} subscription</p>
-                    <p className="text-gray-400 text-sm">Expires: {new Date(subscriptionStatus.expires_at).toLocaleDateString()}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {plans.map((plan) => (
-                      <div key={plan._id} className="flex items-center justify-between p-3 bg-dark-700 rounded-lg">
-                        <div>
-                          <p className="text-white font-medium">{plan.display_name}</p>
-                          <p className="text-gray-400 text-sm">{plan.duration_days} days</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white font-bold">KES {plan.price}</p>
-                          <button
-                            onClick={() => handleSubscribe(plan.name)}
-                            disabled={processingPayment}
-                            className="text-primary-400 text-sm hover:text-primary-300"
-                          >
-                            Subscribe
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                {!subscriptionStatus?.has_subscription && (
+                  <>
+                    <h3 className="text-lg font-semibold text-white mb-4 text-center">Subscribe to Watch</h3>
+                    <div className="space-y-3">
+                      {plans.map((plan) => (
+                        <button
+                          key={plan._id}
+                          onClick={() => handleSubscribe(plan.name)}
+                          disabled={processingPayment}
+                          className="w-full flex items-center justify-between p-3 bg-dark-700 rounded-lg hover:bg-dark-600 transition-colors"
+                        >
+                          <div className="text-left">
+                            <p className="text-white font-medium">{plan.display_name}</p>
+                            <p className="text-gray-400 text-sm">{plan.duration_days} days access</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-primary-400 font-bold">KES {plan.price}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

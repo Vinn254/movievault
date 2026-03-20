@@ -244,9 +244,9 @@ const MovieCard = ({ movie, onUpdate }) => {
           </div>
         )}
         
-        {/* Price badge */}
+        {/* Price badge - show FREE or SUBSCRIPTION */}
         <div className="absolute top-2 left-2 bg-accent-600 text-white px-2 py-1 rounded-md text-sm font-medium">
-          KES {price}
+          {movie.is_free ? 'FREE' : 'SUBSCRIPTION'}
         </div>
         
         {/* Play overlay */}

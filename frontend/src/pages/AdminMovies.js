@@ -23,12 +23,14 @@ const AdminMovies = () => {
     trailer_url: '',
     subtitle_url: '',
     subtitle_language: '',
-    price: '',
+    price: 0,
     genre: '',
     release_year: '',
     language: '',
     is_active: true,
     is_free: false,
+    content_type: 'movie', // 'movie', 'series', 'free_movie', 'free_series'
+    is_featured: false,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -366,6 +368,32 @@ const AdminMovies = () => {
                         <option value="luhya">Luhya</option>
                         <option value="meru">Meru</option>
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Content Type</label>
+                      <select
+                        name="content_type"
+                        value={formData.content_type}
+                        onChange={handleChange}
+                        className="input"
+                      >
+                        <option value="movie">Movie</option>
+                        <option value="series">TV Series</option>
+                        <option value="free_movie">Free Movie</option>
+                        <option value="free_series">Free Series</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-6">
+                      <input
+                        type="checkbox"
+                        name="is_featured"
+                        checked={formData.is_featured}
+                        onChange={handleChange}
+                        className="w-4 h-4 rounded bg-dark-700 border-dark-600"
+                      />
+                      <label className="text-sm text-gray-300">Show in Featured Section</label>
                     </div>
 
                     <div className="md:col-span-2">
