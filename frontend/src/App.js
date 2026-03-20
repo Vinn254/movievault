@@ -15,6 +15,7 @@ import MyLibrary from './pages/MyLibrary';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminMovies from './pages/AdminMovies';
 import AdminUsers from './pages/AdminUsers';
+import AdminMusic from './pages/AdminMusic';
 import Trailer from './pages/Trailer';
 import Music from './pages/Music';
 import TVSeries from './pages/TVSeries';
@@ -44,6 +45,7 @@ function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/movies" element={<AdminMovies />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/music" element={<AdminMusic />} />
             </Routes>
           </main>
           <Footer />

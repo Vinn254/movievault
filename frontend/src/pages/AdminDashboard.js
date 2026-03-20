@@ -44,7 +44,7 @@ const AdminDashboard = () => {
         <h1 className="font-display text-3xl font-bold text-white mb-8">Admin Dashboard</h1>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link to="/admin/movies" className="card p-6 hover:border-primary-500 transition-colors">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center mr-4">
@@ -54,7 +54,21 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-white">Manage Movies</h3>
-                <p className="text-gray-400 text-sm">Add, edit, or remove movies</p>
+                <p className="text-gray-400 text-sm">Add movies & series</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link to="/admin/music" className="card p-6 hover:border-purple-500 transition-colors">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">Manage Music</h3>
+                <p className="text-gray-400 text-sm">Add music tracks</p>
               </div>
             </div>
           </Link>
@@ -68,7 +82,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-white">Manage Users</h3>
-                <p className="text-gray-400 text-sm">View and manage user accounts</p>
+                <p className="text-gray-400 text-sm">View user accounts</p>
               </div>
             </div>
           </Link>
@@ -82,7 +96,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-white">View Reports</h3>
-                <p className="text-gray-400 text-sm">See payment and usage reports</p>
+                <p className="text-gray-400 text-sm">Payment reports</p>
               </div>
             </div>
           </div>

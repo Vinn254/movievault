@@ -67,6 +67,8 @@ export const musicAPI = {
   getAll: (params) => api.get('/api/music', { params }),
   getById: (id) => api.get(`/api/music/${id}`),
   create: (data) => api.post('/api/music', data),
+  update: (id, data) => api.put(`/api/music/${id}`, data),
+  delete: (id) => api.delete(`/api/music/${id}`),
   like: (musicId, reaction) => api.post('/api/music/like', { music_id: musicId, reaction }),
 };
 

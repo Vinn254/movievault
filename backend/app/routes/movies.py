@@ -406,6 +406,44 @@ async def like_music(reaction: MusicReaction, current_user: dict = Depends(get_c
     
     return {"message": "Reaction updated successfully"}
 
+@router.put("/music/{music_id}")
+async def update_music(music_id: str, track_update: MusicUpdate, current_user: dict = Depends(get_current_admin)):
+    """Update a music track (Admin only)"""
+    db = Database.get_db()
+    
+    # Check if track exists
+    existing = await db[MUSIC_COLLECTION].find_one({"_id": music_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Track not found")
+    
+    update_data = track_update.dict(exclude_unset=True)
+    
+    if update_data:
+        await db[MUSIC_COLLECTION].update_one(
+            {"_id": music_id},
+            {"$set": update_data}
+        )
+    
+    updated_track = await db[MUSIC_COLLECTION].find_one({"_id": music_id})
+    updated_track["_id"] = str(updated_track["_id"])
+    return updated_track
+
+@router.delete("/music/{music_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_music(music_id: str, current_user: dict = Depends(get_current_admin)):
+    """Delete a music track (Admin only)"""
+    db = Database.get_db()
+    
+    # Check if track exists
+    existing = await db[MUSIC_COLLECTION].find_one({"_id": music_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Track not found")
+    
+    # Soft delete
+    await db[MUSIC_COLLECTION].update_one(
+        {"_id": music_id},
+        {"$set": {"is_active": False}}
+    )
+
 # ==================== SERIES/SEASONS ENDPOINTS ====================
 @router.get("/series/{series_id}/seasons")
 async def get_series_seasons(series_id: str):

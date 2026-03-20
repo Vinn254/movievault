@@ -59,6 +59,20 @@ const MovieDetail = () => {
     }
   };
 
+  const handleLike = async (reaction) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      await moviesAPI.likeMovie(id, reaction);
+      fetchMovie(); // Refresh movie data to get updated likes
+    } catch (error) {
+      console.error('Error liking movie:', error);
+    }
+  };
+
   const handleSubscribe = async (planName) => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -261,9 +275,41 @@ const MovieDetail = () => {
               )}
               
               <div className="p-8">
-                <h1 className="font-display text-3xl font-bold text-white mb-4">
-                  {movie.title}
-                </h1>
+                <div className="flex items-center justify-between mb-4">
+                  <h1 className="font-display text-3xl font-bold text-white">
+                    {movie.title}
+                  </h1>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleLike('like')}
+                      disabled={!isAuthenticated}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors ${
+                        movie.user_liked 
+                          ? 'bg-red-500/20 text-red-400' 
+                          : 'bg-dark-700 text-gray-400 hover:bg-dark-600 hover:text-red-400'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill={movie.user_liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                      <span>{movie.likes || 0}</span>
+                    </button>
+                    <button
+                      onClick={() => handleLike('dislike')}
+                      disabled={!isAuthenticated}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors ${
+                        movie.user_disliked 
+                          ? 'bg-blue-500/20 text-blue-400' 
+                          : 'bg-dark-700 text-gray-400 hover:bg-dark-600 hover:text-blue-400'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill={movie.user_disliked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                      <span>{movie.dislikes || 0}</span>
+                    </button>
+                  </div>
+                </div>
                 
                 <div className="flex flex-wrap gap-4 text-gray-400 mb-6">
                   {movie.genre && <span className="px-3 py-1 bg-dark-700 rounded-full">{movie.genre}</span>}
