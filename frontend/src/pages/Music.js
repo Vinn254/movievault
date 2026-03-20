@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { musicAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { isYouTubeUrl, getYouTubeVideoId, getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube';
 
 const Music = () => {
   const { isAuthenticated, user } = useAuth();
@@ -43,6 +44,19 @@ const Music = () => {
   });
 
   const handlePlay = (track) => {
+    // Check if it's a YouTube URL
+    if (track.audio_url && isYouTubeUrl(track.audio_url)) {
+      // For YouTube links, just toggle play state
+      if (currentTrack?.id === track.id) {
+        setIsPlaying(!isPlaying);
+      } else {
+        setCurrentTrack(track);
+        setIsPlaying(true);
+      }
+      return;
+    }
+    
+    // Regular audio file
     if (currentTrack?.id === track.id) {
       if (isPlaying) {
         audioElement?.pause();
@@ -169,7 +183,11 @@ const Music = () => {
                     <div className="relative z-10 flex items-center gap-8 px-12 w-full">
                       <div className="w-48 h-48 bg-dark-700 rounded-lg overflow-hidden flex-shrink-0 shadow-2xl">
                         {track.thumbnail_url ? (
-                          <img src={track.thumbnail_url} alt={track.title} className="w-full h-full object-cover" />
+                          isYouTubeUrl(track.thumbnail_url) ? (
+                            <img src={getYouTubeThumbnail(track.thumbnail_url)} alt={track.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <img src={track.thumbnail_url} alt={track.title} className="w-full h-full object-cover" />
+                          )
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <svg className="w-20 h-20 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,8 +318,10 @@ const Music = () => {
             >
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-dark-700 rounded-lg flex-shrink-0 overflow-hidden relative group">
-                  {track.thumbnail_url ? (
+                  {(track.thumbnail_url && !isYouTubeUrl(track.thumbnail_url)) ? (
                     <img src={track.thumbnail_url} alt={track.title} className="w-full h-full object-cover" />
+                  ) : isYouTubeUrl(track.thumbnail_url) ? (
+                    <img src={`https://img.youtube.com/vi/${getYouTubeVideoId(track.thumbnail_url)}/hqdefault.jpg`} alt={track.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -367,37 +387,72 @@ const Music = () => {
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-700 px-4 py-3">
           <div className="max-w-7xl mx-auto flex items-center gap-4">
-            <div className="w-12 h-12 bg-dark-700 rounded flex-shrink-0 overflow-hidden">
-              {currentTrack.thumbnail_url ? (
-                <img src={currentTrack.thumbnail_url} alt={currentTrack.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                  </svg>
+            {currentTrack.audio_url && isYouTubeUrl(currentTrack.audio_url) ? (
+              <>
+                {/* YouTube Player */}
+                <div className="w-64 h-12 bg-dark-700 rounded flex items-center overflow-hidden">
+                  <iframe
+                    width="256"
+                    height="48"
+                    src={`${getYouTubeEmbedUrl(currentTrack.audio_url)}?autoplay=1&playsinline=1`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                    title="YouTube Music"
+                  ></iframe>
                 </div>
-              )}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h4 className="text-white font-semibold truncate">{currentTrack.title}</h4>
-              <p className="text-gray-400 text-sm truncate">{currentTrack.artist}</p>
-            </div>
-            
-            <button
-              onClick={() => handlePlay(currentTrack)}
-              className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-500 transition-colors"
-            >
-              {isPlaying ? (
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-white font-semibold truncate">{currentTrack.title}</h4>
+                  <p className="text-gray-400 text-sm truncate">{currentTrack.artist}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setCurrentTrack(null);
+                    setIsPlaying(false);
+                  }}
+                  className="w-10 h-10 bg-dark-700 rounded-full flex items-center justify-center hover:bg-dark-600"
+                >
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="w-12 h-12 bg-dark-700 rounded flex-shrink-0 overflow-hidden">
+                  {currentTrack.thumbnail_url ? (
+                    <img src={currentTrack.thumbnail_url} alt={currentTrack.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-white font-semibold truncate">{currentTrack.title}</h4>
+                  <p className="text-gray-400 text-sm truncate">{currentTrack.artist}</p>
+                </div>
+                
+                <button
+                  onClick={() => handlePlay(currentTrack)}
+                  className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-500 transition-colors"
+                >
+                  {isPlaying ? (
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
