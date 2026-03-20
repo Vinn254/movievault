@@ -44,15 +44,25 @@ const Trending = () => {
     <div className="min-h-screen bg-dark-900 pt-20">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-orange-900 via-dark-900 to-dark-900 py-16">
+        <div className="absolute top-4 right-8 opacity-20">
+          <svg className="w-64 h-64 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="font-display text-4xl md:text-6xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent mb-4">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-orange-600 rounded-xl flex items-center justify-center">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <h1 className="font-display text-4xl md:text-6xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
               Trending Now
             </h1>
-            <p className="text-xl text-gray-400 mb-8">
-              See what everyone is watching and loving right now!
-            </p>
           </div>
+          <p className="text-xl text-gray-400 mb-8 text-center">
+            See what everyone is watching and loving right now!
+          </p>
         </div>
       </div>
 

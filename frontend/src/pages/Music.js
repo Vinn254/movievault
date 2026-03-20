@@ -125,8 +125,14 @@ const Music = () => {
     <div className="min-h-screen bg-dark-900 pb-24">
       {/* Hero Section with Music Icon */}
       <div className="relative bg-gradient-to-b from-purple-900/50 to-dark-900 py-16">
-        <div className="absolute top-4 right-8 opacity-20">
+        <div className="absolute top-4 right-8 opacity-20 flex gap-4">
           <svg className="w-64 h-64 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <svg className="w-48 h-48 text-purple-300" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <svg className="w-40 h-40 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
           </svg>
         </div>
@@ -205,6 +211,22 @@ const Music = () => {
                           <div className="flex items-center gap-1 text-gray-400">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             <span>{track.views || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Person with headphones image on right */}
+                      <div className="hidden lg:block w-64 h-64 flex-shrink-0 relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 to-transparent rounded-lg" />
+                        <img 
+                          src="https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=400&h=400&fit=crop" 
+                          alt="Person listening to music" 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center">
+                          <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                            </svg>
                           </div>
                         </div>
                       </div>

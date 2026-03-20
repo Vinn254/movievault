@@ -165,9 +165,36 @@ const AdminMovies = () => {
     try {
       await moviesAPI.delete(id);
       fetchMovies();
+      alert('Movie deleted successfully!');
     } catch (error) {
       console.error('Error deleting movie:', error);
+      alert('Failed to delete movie. Make sure you are logged in as admin.');
     }
+  };
+
+  const handleEdit = (movie) => {
+    setEditingMovie(movie);
+    setFormData({
+      title: movie.title || '',
+      description: movie.description || '',
+      thumbnail_url: movie.thumbnail_url || '',
+      video_url: movie.video_url || '',
+      video_360p: movie.video_360p || '',
+      video_720p: movie.video_720p || '',
+      video_1080p: movie.video_1080p || '',
+      trailer_url: movie.trailer_url || '',
+      subtitle_url: movie.subtitle_url || '',
+      subtitle_language: movie.subtitle_language || '',
+      price: movie.price || 0,
+      genre: movie.genre || '',
+      release_year: movie.release_year || '',
+      language: movie.language || '',
+      is_active: movie.is_active !== false,
+      is_free: movie.is_free || false,
+      content_type: movie.content_type || 'movie',
+      is_featured: movie.is_featured || false,
+    });
+    setShowModal(true);
   };
 
   if (loading) {
