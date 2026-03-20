@@ -5,6 +5,7 @@ import MovieCard from '../components/MovieCard';
 const Trending = () => {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingSeries, setTrendingSeries] = useState([]);
+  const [trendingMusic, setTrendingMusic] = useState([]);
   const [topLiked, setTopLiked] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('movies');
@@ -19,6 +20,7 @@ const Trending = () => {
       const response = await moviesAPI.getTrending();
       setTrendingMovies(response.data.trending_movies || []);
       setTrendingSeries(response.data.trending_series || []);
+      setTrendingMusic(response.data.trending_music || []);
       setTopLiked(response.data.top_liked || []);
     } catch (error) {
       console.error('Error fetching trending:', error);
@@ -35,6 +37,8 @@ const Trending = () => {
         return trendingSeries;
       case 'liked':
         return topLiked;
+      case 'music':
+        return trendingMusic;
       default:
         return trendingMovies;
     }
@@ -100,6 +104,16 @@ const Trending = () => {
             >
               Most Liked
             </button>
+            <button
+              onClick={() => setActiveTab('music')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === 'music'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
+              }`}
+            >
+              Trending Music
+            </button>
           </div>
         </div>
       </div>
@@ -120,17 +134,42 @@ const Trending = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {getCurrentContent().map((movie, index) => (
+            {getCurrentContent().map((item, index) => (
               <div
-                key={movie.id}
+                key={item.id}
                 className="animate-fade-in relative"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 {/* Rank Badge */}
-                <div className="absolute top-2 left-2 z-10 w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                <div className={`absolute top-2 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center ${activeTab === 'music' ? 'bg-purple-600' : 'bg-orange-600'}`}>
                   <span className="text-white font-bold text-sm">#{index + 1}</span>
                 </div>
-                <MovieCard movie={movie} />
+                {activeTab === 'music' ? (
+                  <div className="card p-4 hover:border-purple-500 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 bg-dark-700 rounded-lg overflow-hidden flex-shrink-0">
+                        {item.thumbnail_url ? (
+                          <img src={item.thumbnail_url} alt={item.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <svg className="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-semibold truncate">{item.title}</h3>
+                        <p className="text-gray-400 text-sm truncate">{item.artist}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">Music</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <MovieCard movie={item} />
+                )}
               </div>
             ))}
           </div>
