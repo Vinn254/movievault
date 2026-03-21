@@ -55,15 +55,13 @@ const FeaturedMoviesSlider = ({ movies = [] }) => {
     setShowQualityMenu(null);
   };
 
-  // Filter movies by language and show movies with trailer or thumbnail
+  // Filter movies by language and show movies with valid content
   useEffect(() => {
     let filtered = movies;
     
-    // Show movies that have either trailer or thumbnail in featured section
+    // Show movies that have valid content (title + thumbnail or video)
     filtered = filtered.filter(movie => 
-      (movie.trailer_url && isYouTubeUrl(movie.trailer_url)) || 
-      movie.thumbnail_url || 
-      (movie.video_url && isYouTubeUrl(movie.video_url))
+      movie.title && (movie.thumbnail_url || movie.video_url)
     );
     
     if (selectedLanguage !== 'all') {

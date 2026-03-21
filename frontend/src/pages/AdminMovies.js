@@ -23,13 +23,11 @@ const AdminMovies = () => {
     trailer_url: '',
     subtitle_url: '',
     subtitle_language: '',
-    price: 0,
     genre: '',
     release_year: '',
     language: '',
     is_active: true,
-    is_free: false,
-    content_type: 'movie', // 'movie', 'series', 'free_movie', 'free_series'
+    content_type: 'movie', // 'movie', 'series'
     is_featured: false,
   });
   const [saving, setSaving] = useState(false);
@@ -103,19 +101,10 @@ const AdminMovies = () => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    // If is_free is checked, automatically set price to 0
-    if (name === 'is_free') {
-      setFormData(prev => ({
-        ...prev,
-        is_free: checked,
-        price: checked ? 0 : prev.price,
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value,
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const openModal = (movie = null) => {
@@ -132,12 +121,10 @@ const AdminMovies = () => {
         trailer_url: movie.trailer_url || '',
         subtitle_url: movie.subtitle_url || '',
         subtitle_language: movie.subtitle_language || '',
-        price: movie.price,
         genre: movie.genre || '',
         release_year: movie.release_year || '',
         language: movie.language || '',
         is_active: movie.is_active,
-        is_free: movie.is_free || false,
       });
     } else {
       setEditingMovie(null);
@@ -152,12 +139,10 @@ const AdminMovies = () => {
         trailer_url: '',
         subtitle_url: '',
         subtitle_language: '',
-        price: '',
         genre: '',
         release_year: '',
         language: '',
         is_active: true,
-        is_free: false,
       });
     }
     setShowModal(true);
@@ -170,12 +155,8 @@ const AdminMovies = () => {
     setSaving(true);
 
     try {
-      // Ensure price is a number, default to 0 if is_free
-      const priceValue = formData.is_free ? 0 : (formData.price ? parseFloat(formData.price) : 0);
-      
       const data = {
         ...formData,
-        price: priceValue,
         release_year: formData.release_year ? parseInt(formData.release_year) : null,
       };
 
@@ -259,12 +240,10 @@ const AdminMovies = () => {
       trailer_url: movie.trailer_url || '',
       subtitle_url: movie.subtitle_url || '',
       subtitle_language: movie.subtitle_language || '',
-      price: movie.price || 0,
       genre: movie.genre || '',
       release_year: movie.release_year || '',
       language: movie.language || '',
       is_active: movie.is_active !== false,
-      is_free: movie.is_free || false,
       content_type: movie.content_type || 'movie',
       is_featured: movie.is_featured || false,
     });
@@ -339,7 +318,6 @@ const AdminMovies = () => {
               <thead className="bg-dark-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Movie</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Genre</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Views</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
@@ -363,7 +341,6 @@ const AdminMovies = () => {
                         <span className="text-white font-medium">{movie.title}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-300">KES {movie.price}</td>
                     <td className="px-6 py-4 text-gray-300">{movie.genre || '-'}</td>
                     <td className="px-6 py-4 text-gray-300">{movie.views}</td>
                     <td className="px-6 py-4">
@@ -442,23 +419,6 @@ const AdminMovies = () => {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
-                        Price (KES)
-                        {formData.is_free && <span className="text-accent-400 ml-2">(Free Movie - Price set to 0)</span>}
-                      </label>
-                      <input
-                        type="number"
-                        name="price"
-                        value={formData.price === 0 ? 0 : formData.price}
-                        onChange={handleChange}
-                        required={!formData.is_free}
-                        disabled={formData.is_free}
-                        step="0.01"
-                        className={`input ${formData.is_free ? 'bg-dark-700 opacity-50' : ''}`}
-                      />
-                    </div>
-
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -524,8 +484,6 @@ const AdminMovies = () => {
                       >
                         <option value="movie">Movie</option>
                         <option value="series">TV Series</option>
-                        <option value="free_movie">Free Movie</option>
-                        <option value="free_series">Free Series</option>
                       </select>
                     </div>
 

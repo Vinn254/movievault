@@ -144,7 +144,7 @@ const Home = () => {
       <FeaturedMoviesSlider movies={movies} />
 
       {/* Trending Movies Section */}
-      {trendingMovies.length > 0 && (
+      {trendingMovies.filter(m => m.title && (m.thumbnail_url || m.video_url)).length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-3 mb-6">
             <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@ const Home = () => {
             <h2 className="text-2xl font-bold text-white">Trending Movies</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {trendingMovies.slice(0, 8).map((movie, index) => (
+            {trendingMovies.filter(m => m.title && (m.thumbnail_url || m.video_url)).slice(0, 8).map((movie, index) => (
               <div
                 key={movie.id}
                 className="animate-fade-in"
@@ -167,7 +167,7 @@ const Home = () => {
       )}
 
       {/* Trending TV Series Section */}
-      {trendingSeries.length > 0 && (
+      {trendingSeries.filter(m => m.title && (m.thumbnail_url || m.video_url)).length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-3 mb-6">
             <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +176,7 @@ const Home = () => {
             <h2 className="text-2xl font-bold text-white">Trending TV Series</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {trendingSeries.slice(0, 8).map((movie, index) => (
+            {trendingSeries.filter(m => m.title && (m.thumbnail_url || m.video_url)).slice(0, 8).map((movie, index) => (
               <div
                 key={movie.id}
                 className="animate-fade-in"
@@ -200,8 +200,14 @@ const Home = () => {
             <p className="text-gray-400 text-lg">No movies found</p>
           </div>
         ) : (
+          <>
+            {movies.filter(m => m.title && (m.thumbnail_url || m.video_url)).length === 0 ? (
+              <div className="text-center py-20 col-span-full">
+                <p className="text-gray-400 text-lg">No valid movies available</p>
+              </div>
+            ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {movies.map((movie, index) => (
+            {movies.filter(m => m.title && (m.thumbnail_url || m.video_url)).map((movie, index) => (
               <div
                 key={movie.id}
                 className="animate-fade-in"
@@ -211,6 +217,8 @@ const Home = () => {
               </div>
             ))}
           </div>
+            )}
+          </>
         )}
       </div>
     </div>
