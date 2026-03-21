@@ -170,8 +170,13 @@ const AdminMovies = () => {
       fetchMovies();
     } catch (err) {
       console.error('Error saving movie:', err);
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+      
       const errorDetail = err.response?.data?.detail;
-      if (typeof errorDetail === 'string') {
+      if (err.response?.status === 403) {
+        setError('Access denied. Your account may not have admin permissions. Please logout and login again, or contact the administrator.');
+      } else if (typeof errorDetail === 'string') {
         setError(errorDetail);
       } else if (Array.isArray(errorDetail)) {
         setError(errorDetail.map(e => e.msg || JSON.stringify(e)).join(', '));
@@ -306,9 +311,28 @@ const AdminMovies = () => {
             </Link>
             <h1 className="font-display text-3xl font-bold text-white">Manage Movies</h1>
           </div>
-          <button onClick={() => openModal()} className="btn btn-primary">
-            Add Movie
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={async () => {
+                const token = localStorage.getItem('token');
+                try {
+                  const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                  });
+                  const userData = await response.json();
+                  alert(`Your account status:\nEmail: ${userData.email}\nis_admin: ${userData.is_admin}`);
+                } catch (e) {
+                  alert('Error checking status');
+                }
+              }} 
+              className="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600"
+            >
+              Check My Admin Status
+            </button>
+            <button onClick={() => openModal()} className="btn btn-primary">
+              Add Movie
+            </button>
+          </div>
         </div>
 
         {/* Movies Table */}
