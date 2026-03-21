@@ -7,9 +7,35 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPromote, setShowPromote] = useState(false);
+  const [promoteEmail, setPromoteEmail] = useState('');
+  const [promoteSecret, setPromoteSecret] = useState('');
+  const [promoteMsg, setPromoteMsg] = useState('');
+  const [promoteLoading, setPromoteLoading] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handlePromote = async (e) => {
+    e.preventDefault();
+    setPromoteMsg('');
+    setPromoteLoading(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/promote?email=${encodeURIComponent(promoteEmail)}&secret=${encodeURIComponent(promoteSecret)}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setPromoteMsg('✓ ' + data.message);
+      } else {
+        setPromoteMsg('Error: ' + (data.detail || 'Failed'));
+      }
+    } catch (err) {
+      setPromoteMsg('Error: ' + err.message);
+    } finally {
+      setPromoteLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,6 +122,51 @@ const Login = () => {
                 Sign up
               </Link>
             </p>
+          </div>
+
+          {/* Admin Promote Section */}
+          <div className="mt-8 pt-6 border-t border-dark-700">
+            <button
+              type="button"
+              onClick={() => setShowPromote(!showPromote)}
+              className="text-sm text-gray-500 hover:text-gray-400"
+            >
+              {showPromote ? '▼ Hide' : '▶'} Need admin access?
+            </button>
+            
+            {showPromote && (
+              <form onSubmit={handlePromote} className="mt-4 space-y-3">
+                <p className="text-xs text-gray-500">Enter your email and admin secret to promote your account:</p>
+                <input
+                  type="email"
+                  value={promoteEmail}
+                  onChange={(e) => setPromoteEmail(e.target.value)}
+                  required
+                  className="input text-sm"
+                  placeholder="Your email"
+                />
+                <input
+                  type="password"
+                  value={promoteSecret}
+                  onChange={(e) => setPromoteSecret(e.target.value)}
+                  required
+                  className="input text-sm"
+                  placeholder="Admin secret key"
+                />
+                <button
+                  type="submit"
+                  disabled={promoteLoading}
+                  className="w-full btn btn-secondary py-2 text-sm"
+                >
+                  {promoteLoading ? 'Promoting...' : 'Promote to Admin'}
+                </button>
+                {promoteMsg && (
+                  <p className={`text-sm ${promoteMsg.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                    {promoteMsg}
+                  </p>
+                )}
+              </form>
+            )}
           </div>
         </div>
       </div>
