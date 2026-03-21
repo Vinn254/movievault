@@ -44,15 +44,23 @@ async def get_trending():
     """Get trending movies, series, and music based on views and likes"""
     db = Database.get_db()
     
-    # Get trending movies (top 10 by views)
+    # Get trending movies (top 10 by views) - only movies with valid content
     trending_movies_cursor = db[MOVIES_COLLECTION].find(
-        {"is_active": True, "content_type": {"$in": ["movie", "free_movie"]}}
+        {
+            "is_active": True, 
+            "content_type": {"$in": ["movie", "free_movie"]},
+            "$or": [{"thumbnail_url": {"$exists": True, "$ne": ""}}, {"video_url": {"$exists": True, "$ne": ""}}]
+        }
     ).sort("views", -1).limit(10)
     trending_movies = await trending_movies_cursor.to_list(length=10)
     
-    # Get trending series (top 10 by views)
+    # Get trending series (top 10 by views) - only series with valid content
     trending_series_cursor = db[MOVIES_COLLECTION].find(
-        {"is_active": True, "content_type": {"$in": ["series", "free_series"]}}
+        {
+            "is_active": True, 
+            "content_type": {"$in": ["series", "free_series"]},
+            "$or": [{"thumbnail_url": {"$exists": True, "$ne": ""}}, {"video_url": {"$exists": True, "$ne": ""}}]
+        }
     ).sort("views", -1).limit(10)
     trending_series = await trending_series_cursor.to_list(length=10)
     
@@ -649,10 +657,11 @@ async def get_movies(
     db = Database.get_db()
     
     # Build query - admin can include inactive movies
+    # Also filter out movies without valid content (thumbnail or video)
     if include_inactive:
-        query = {}
+        query = {"$or": [{"thumbnail_url": {"$exists": True, "$ne": ""}}, {"video_url": {"$exists": True, "$ne": ""}}]}
     else:
-        query = {"is_active": True}
+        query = {"is_active": True, "$or": [{"thumbnail_url": {"$exists": True, "$ne": ""}}, {"video_url": {"$exists": True, "$ne": ""}}]}
     
     if genre:
         query["genre"] = genre
