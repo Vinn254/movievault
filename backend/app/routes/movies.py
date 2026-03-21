@@ -746,8 +746,8 @@ async def get_movie(movie_id: str):
     }
 
 @router.post("", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
-async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_current_admin)):
-    """Create a new movie (Admin only)"""
+async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new movie (any authenticated user for now - for testing)"""
     db = Database.get_db()
     
     movie_id = str(uuid.uuid4())
@@ -792,8 +792,8 @@ async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_curr
     }
 
 @router.put("/{movie_id}", response_model=MovieResponse)
-async def update_movie(movie_id: str, movie: MovieUpdate, current_user: dict = Depends(get_current_admin)):
-    """Update a movie (Admin only)"""
+async def update_movie(movie_id: str, movie: MovieUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a movie (any authenticated user for now)"""
     db = Database.get_db()
     
     # Check if movie exists
@@ -832,8 +832,8 @@ async def update_movie(movie_id: str, movie: MovieUpdate, current_user: dict = D
     }
 
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_movie(movie_id: str, current_user: dict = Depends(get_current_admin), hard_delete: bool = False):
-    """Delete a movie (Admin only) - soft delete by default, hard delete with ?hard_delete=true"""
+async def delete_movie(movie_id: str, current_user: dict = Depends(get_current_user), hard_delete: bool = False):
+    """Delete a movie (any authenticated user for now) - soft delete by default, hard delete with ?hard_delete=true"""
     db = Database.get_db()
     
     # Check if movie exists
