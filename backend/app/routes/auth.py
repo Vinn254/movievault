@@ -41,6 +41,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
     
+    # Add is_admin from token to ensure it's available
+    user['is_admin'] = user.get('is_admin', payload.get('is_admin', False))
     return user
 
 async def get_current_admin(current_user: dict = Depends(get_current_user)):
@@ -123,9 +125,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token
+    # Create access token - include is_admin so it's immediately available
     access_token = create_access_token(
-        data={"sub": user["_id"], "email": user["email"]}
+        data={"sub": user["_id"], "email": user["email"], "is_admin": user.get("is_admin", False)}
     )
     
     return {

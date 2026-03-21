@@ -114,7 +114,10 @@ const FeaturedMoviesSlider = ({ movies = [] }) => {
   };
 
   // Get movies for background (all movies, not just trailer ones)
+  // Also filter out inactive movies
   const backgroundMovies = movies.filter(movie => {
+    // Filter out inactive movies
+    if (movie.is_active === false) return false;
     if (movie.thumbnail_url) return true;
     if (movie.video_url && isYouTubeUrl(movie.video_url)) return true;
     return false;
