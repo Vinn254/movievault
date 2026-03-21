@@ -29,9 +29,12 @@ const Home = () => {
       if (selectedGenre) params.genre = selectedGenre;
       
       const response = await moviesAPI.getAll(params);
-      setMovies(response.data.movies);
+      // Handle both cases where movies might be in response.data.movies or response.data
+      const moviesData = response.data.movies || response.data || [];
+      setMovies(Array.isArray(moviesData) ? moviesData : []);
     } catch (error) {
       console.error('Error fetching movies:', error);
+      setMovies([]); // Set empty array on error to prevent crashes
     } finally {
       setLoading(false);
     }

@@ -35,6 +35,13 @@ const MovieDetail = () => {
       setMovie(response.data);
     } catch (error) {
       console.error('Error fetching movie:', error);
+      if (error.response?.status === 404) {
+        setError('Movie not found. The movie may have been removed or is currently unavailable.');
+      } else if (error.response?.data?.detail) {
+        setError(error.response.data.detail);
+      } else {
+        setError('Failed to load movie. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }

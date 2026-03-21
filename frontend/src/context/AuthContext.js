@@ -21,13 +21,30 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    // First, try to restore user from localStorage for immediate UI update
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+      }
+    }
+    
+    // Then, verify with backend to get latest user data
     if (token) {
       try {
         const response = await authAPI.getMe();
-        setUser(response.data);
+        const userData = response.data;
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
       } catch (error) {
+        console.error('Error verifying auth:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setUser(null);
       }
     }
     setLoading(false);
@@ -54,15 +71,44 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Force re-render when user data changes
+  const [userData, setUserData] = useState(null);
+  
+  // Update userData when user changes
+  useEffect(() => {
+    if (user) {
+      setUserData(user);
+      // Also store in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      // Try to load from localStorage on initial load
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          setUserData(JSON.parse(storedUser));
+        } catch (e) {
+          console.error('Error parsing stored user:', e);
+        }
+      }
+    }
+  }, [user]);
+
   const value = {
-    user,
-    setUser,
+    user: userData,
+    setUser: (newUser) => {
+      setUser(newUser);
+      if (newUser) {
+        localStorage.setItem('user', JSON.stringify(newUser));
+      } else {
+        localStorage.removeItem('user');
+      }
+    },
     loading,
     login,
     register,
     logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.is_admin || false,
+    isAuthenticated: !!userData,
+    isAdmin: userData?.is_admin === true,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

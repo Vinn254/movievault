@@ -169,7 +169,7 @@ const Music = () => {
 
       {/* Featured Music Slider */}
       {featuredTracks.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 -mt-6 sm:-mt-8">
           <div className="card overflow-hidden relative">
             <div 
               className="flex transition-transform duration-500"
@@ -178,10 +178,10 @@ const Music = () => {
             >
               {featuredTracks.map((track, index) => (
                 <div key={track.id} className="w-full flex-shrink-0 relative">
-                  <div className="aspect-[21/9] bg-gradient-to-r from-purple-900 to-dark-800 flex items-center">
+                  <div className="aspect-[16/9] md:aspect-[21/9] bg-gradient-to-r from-purple-900 to-dark-800 flex items-center">
                     <div className="absolute inset-0 bg-black/40" />
-                    <div className="relative z-10 flex items-center gap-8 px-12 w-full">
-                      <div className="w-48 h-48 bg-dark-700 rounded-lg overflow-hidden flex-shrink-0 shadow-2xl">
+                    <div className="relative z-10 flex items-center gap-3 sm:gap-6 px-3 sm:px-8 lg:px-12 w-full">
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 bg-dark-700 rounded-lg overflow-hidden flex-shrink-0 shadow-2xl">
                         {track.thumbnail_url ? (
                           isYouTubeUrl(track.thumbnail_url) ? (
                             <img src={getYouTubeThumbnail(track.thumbnail_url)} alt={track.title} className="w-full h-full object-cover" />
@@ -196,19 +196,19 @@ const Music = () => {
                           </div>
                         )}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-full">Featured</span>
+                          <span className="px-2 py-1 sm:px-3 sm:py-1 bg-purple-600 text-white text-xs font-medium rounded-full">Featured</span>
                           {track.is_free && (
-                            <span className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-full">Free</span>
+                            <span className="px-2 py-1 sm:px-3 sm:py-1 bg-green-600 text-white text-xs font-medium rounded-full">Free</span>
                           )}
                         </div>
-                        <h2 className="text-3xl font-bold text-white mb-2">{track.title}</h2>
-                        <p className="text-xl text-gray-300 mb-4">{track.artist}</p>
-                        <div className="flex items-center gap-4">
+                        <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 truncate">{track.title}</h2>
+                        <p className="text-sm sm:text-lg lg:text-xl text-gray-300 mb-2 sm:mb-4 truncate">{track.artist}</p>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                           <button
                             onClick={() => handlePlay(track)}
-                            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg flex items-center gap-2 transition-colors"
+                            className="px-4 py-2 sm:px-6 sm:py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg flex items-center gap-1 sm:gap-2 transition-colors text-sm sm:text-base"
                           >
                             {currentTrack?.id === track.id && isPlaying ? (
                               <>
