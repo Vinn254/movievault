@@ -80,12 +80,20 @@ const AdminMovies = () => {
 
   const fetchMovies = async () => {
     try {
-      const response = await moviesAPI.getAll({ limit: 100 });
-      console.log('Movies response:', response.data);
-      setMovies(response.data.movies || []);
+      // Fetch all movies including inactive ones for admin management
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/movies?limit=1000&include_inactive=true`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMovies(data.movies || []);
+      } else {
+        setMovies([]);
+      }
     } catch (error) {
       console.error('Error fetching movies:', error);
-      console.error('Error response:', error.response?.data);
       setMovies([]);
     } finally {
       setLoading(false);
@@ -196,17 +204,45 @@ const AdminMovies = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this movie?')) return;
+  const handleDelete = async (id, isActive) => {
+    const action = isActive ? 'delete' : 'permanently remove';
+    if (!window.confirm(`Are you sure you want to ${action} this movie?`)) return;
 
     try {
-      await moviesAPI.delete(id);
+      // Use hard delete to permanently remove the movie
+      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/movies/${id}?hard_delete=true`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
       fetchMovies();
       alert('Movie deleted successfully!');
     } catch (error) {
       console.error('Error deleting movie:', error);
       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
       alert(`Failed to delete movie: ${errorMessage}`);
+    }
+  };
+
+  const handleReactivate = async (id) => {
+    if (!window.confirm('Are you sure you want to reactivate this movie?')) return;
+
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/movies/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: true }),
+      });
+      fetchMovies();
+      alert('Movie reactivated successfully!');
+    } catch (error) {
+      console.error('Error reactivating movie:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      alert(`Failed to reactivate movie: ${errorMessage}`);
     }
   };
 
@@ -344,8 +380,16 @@ const AdminMovies = () => {
                       >
                         Edit
                       </button>
+                      {!movie.is_active && (
+                        <button
+                          onClick={() => handleReactivate(movie.id)}
+                          className="text-green-400 hover:text-green-300 mr-4"
+                        >
+                          Reactivate
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleDelete(movie.id)}
+                        onClick={() => handleDelete(movie.id, movie.is_active)}
                         className="text-red-400 hover:text-red-300"
                       >
                         Delete

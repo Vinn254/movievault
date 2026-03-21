@@ -642,13 +642,17 @@ async def get_movies(
     limit: int = Query(10, ge=1, le=100),
     genre: Optional[str] = None,
     search: Optional[str] = None,
-    content_type: Optional[str] = None  # 'movie', 'series', 'free_movie', 'free_series'
+    content_type: Optional[str] = None,  # 'movie', 'series', 'free_movie', 'free_series'
+    include_inactive: bool = False
 ):
     """Get all movies with optional filtering"""
     db = Database.get_db()
     
-    # Build query
-    query = {"is_active": True}
+    # Build query - admin can include inactive movies
+    if include_inactive:
+        query = {}
+    else:
+        query = {"is_active": True}
     
     if genre:
         query["genre"] = genre
@@ -819,8 +823,8 @@ async def update_movie(movie_id: str, movie: MovieUpdate, current_user: dict = D
     }
 
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_movie(movie_id: str, current_user: dict = Depends(get_current_admin)):
-    """Delete a movie (Admin only)"""
+async def delete_movie(movie_id: str, current_user: dict = Depends(get_current_admin), hard_delete: bool = False):
+    """Delete a movie (Admin only) - soft delete by default, hard delete with ?hard_delete=true"""
     db = Database.get_db()
     
     # Check if movie exists
@@ -828,14 +832,18 @@ async def delete_movie(movie_id: str, current_user: dict = Depends(get_current_a
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Movie not found"
+            detail="Movie not found in database"
         )
     
-    # Soft delete - just mark as inactive
-    await db[MOVIES_COLLECTION].update_one(
-        {"_id": movie_id},
-        {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
-    )
+    if hard_delete:
+        # Permanently remove from database
+        await db[MOVIES_COLLECTION].delete_one({"_id": movie_id})
+    else:
+        # Soft delete - just mark as inactive
+        await db[MOVIES_COLLECTION].update_one(
+            {"_id": movie_id},
+            {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
+        )
     
     return None
 
