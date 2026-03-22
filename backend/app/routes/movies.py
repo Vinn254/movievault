@@ -639,7 +639,7 @@ STREAM_ACCESS_EXPIRE_HOURS = 48  # How long user can watch after payment
 @router.get("/movies", response_model=MovieListResponse)
 async def get_movies(
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=1000),
     genre: Optional[str] = None,
     search: Optional[str] = None,
     content_type: Optional[str] = None,  # 'movie', 'series', 'free_movie', 'free_series'
@@ -700,42 +700,7 @@ async def get_movies(
     
     return {"movies": movie_list, "total": total}
 
-@router.get("/{movie_id}", response_model=MovieResponse)
-async def get_movie(movie_id: str):
-    """Get a single movie by ID"""
-    db = Database.get_db()
-    
-    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id, "is_active": True})
-    
-    if not movie:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Movie not found"
-        )
-    
-    # Increment view count
-    await db[MOVIES_COLLECTION].update_one(
-        {"_id": movie_id},
-        {"$inc": {"views": 1}}
-    )
-    
-    return {
-        "id": movie["_id"],
-        "title": movie["title"],
-        "description": movie.get("description"),
-        "thumbnail_url": movie.get("thumbnail_url"),
-        "video_url": movie.get("video_url"),
-        "price": movie["price"],
-        "is_free": movie.get("is_free", False),
-        "duration": movie.get("duration"),
-        "genre": movie.get("genre"),
-        "release_year": movie.get("release_year"),
-        "is_active": movie.get("is_active", True),
-        "created_at": movie["created_at"],
-        "updated_at": movie.get("updated_at"),
-        "views": movie.get("views", 0) + 1
-    }
-
+# POST /movies must come BEFORE the wildcard /{movie_id} route
 @router.post("", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
 async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_current_user)):
     """Create a new movie (any authenticated user)"""
@@ -780,6 +745,42 @@ async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_curr
         "created_at": now,
         "updated_at": now,
         "views": 0
+    }
+
+@router.get("/{movie_id}", response_model=MovieResponse)
+async def get_movie(movie_id: str):
+    """Get a single movie by ID"""
+    db = Database.get_db()
+    
+    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id, "is_active": True})
+    
+    if not movie:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Movie not found"
+        )
+    
+    # Increment view count
+    await db[MOVIES_COLLECTION].update_one(
+        {"_id": movie_id},
+        {"$inc": {"views": 1}}
+    )
+    
+    return {
+        "id": movie["_id"],
+        "title": movie["title"],
+        "description": movie.get("description"),
+        "thumbnail_url": movie.get("thumbnail_url"),
+        "video_url": movie.get("video_url"),
+        "price": movie["price"],
+        "is_free": movie.get("is_free", False),
+        "duration": movie.get("duration"),
+        "genre": movie.get("genre"),
+        "release_year": movie.get("release_year"),
+        "is_active": movie.get("is_active", True),
+        "created_at": movie["created_at"],
+        "updated_at": movie.get("updated_at"),
+        "views": movie.get("views", 0) + 1
     }
 
 @router.put("/{movie_id}", response_model=MovieResponse)
