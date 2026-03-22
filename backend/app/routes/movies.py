@@ -737,8 +737,8 @@ async def get_movie(movie_id: str):
     }
 
 @router.post("", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
-async def create_movie(movie: MovieCreate):
-    """Create a new movie (no auth - for testing)"""
+async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new movie (any authenticated user)"""
     db = Database.get_db()
     
     movie_id = str(uuid.uuid4())
