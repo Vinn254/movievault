@@ -700,8 +700,8 @@ async def get_movies(
     
     return {"movies": movie_list, "total": total}
 
-# POST /movies must come BEFORE the wildcard /{movie_id} route
-@router.post("", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
+# Use explicit /movies path to avoid wildcard route conflict
+@router.post("/movies", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
 async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_current_user)):
     """Create a new movie (any authenticated user)"""
     db = Database.get_db()
