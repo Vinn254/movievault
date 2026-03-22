@@ -723,7 +723,7 @@ async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_curr
         "duration": movie.duration,
         "genre": movie.genre,
         "release_year": movie.release_year,
-        "is_active": movie.is_active,
+        "is_active": True,  # Always set to True when creating new movie
         "created_at": now,
         "updated_at": now,
         "views": 0
@@ -741,7 +741,7 @@ async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_curr
         "duration": movie.duration,
         "genre": movie.genre,
         "release_year": movie.release_year,
-        "is_active": movie.is_active,
+        "is_active": True,
         "created_at": now,
         "updated_at": now,
         "views": 0
@@ -822,7 +822,8 @@ async def get_movie(movie_id: str):
     """Get a single movie by ID"""
     db = Database.get_db()
     
-    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id, "is_active": True})
+    # Don't require is_active=True - return movie regardless of status
+    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id})
     
     if not movie:
         raise HTTPException(
