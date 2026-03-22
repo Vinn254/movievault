@@ -747,6 +747,76 @@ async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_curr
         "views": 0
     }
 
+# Stream route must come BEFORE wildcard /{movie_id} route
+@router.get("/{movie_id}/stream", response_model=StreamResponse)
+async def stream_movie(movie_id: str, current_user: dict = Depends(get_current_user)):
+    """Get streaming URL for a movie (requires subscription, admin can bypass, free movies open to all)"""
+    db = Database.get_db()
+    
+    # Check if movie exists
+    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id, "is_active": True})
+    if not movie:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Movie not found"
+        )
+    
+    # Admin users can stream without subscription
+    is_admin = current_user.get("is_admin", False)
+    
+    # Check if this is a free movie
+    is_free = movie.get("is_free", False)
+    
+    # Check for subscription (skip for admin and free movies)
+    now = datetime.utcnow()
+    subscription = None
+    
+    if not is_admin and not is_free:
+        # Check if user has active subscription
+        subscription = await db[USER_SUBSCRIPTIONS_COLLECTION].find_one({
+            "user_id": current_user["_id"],
+            "expires_at": {"$gt": now}
+        })
+        
+        if not subscription:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please subscribe to watch this content"
+            )
+    
+    # Generate streaming token
+    stream_token = create_access_token(
+        data={
+            "sub": current_user["_id"],
+            "movie_id": movie_id,
+            "subscription_id": subscription["_id"] if subscription else "admin"
+        },
+        expires_delta=datetime.timedelta(hours=STREAM_TOKEN_EXPIRE_HOURS)
+    )
+    
+    # Get video URL - for admin, return directly; for others get from Firebase
+    video_url = movie.get("video_url", "")
+    if video_url and not is_admin:
+        # Generate signed URL for streaming
+        video_url = firebase_service.get_video_url(movie["video_url"].split("/")[-1])
+    
+    # Set expiry - admin gets 48 hours, subscription users get their subscription expiry
+    if subscription:
+        expires_at = subscription["expires_at"]
+    elif is_free:
+        # Free movies get 24 hour access
+        expires_at = now + datetime.timedelta(hours=FREE_TRIAL_HOURS)
+    else:
+        expires_at = now + datetime.timedelta(hours=STREAM_ACCESS_EXPIRE_HOURS)
+    
+    return {
+        "movie_id": movie_id,
+        "video_url": video_url,
+        "token": stream_token,
+        "expires_at": expires_at
+    }
+
+# Get, Update, Delete movie by ID - must come AFTER stream route
 @router.get("/{movie_id}", response_model=MovieResponse)
 async def get_movie(movie_id: str):
     """Get a single movie by ID"""
@@ -847,74 +917,6 @@ async def delete_movie(movie_id: str, hard_delete: bool = False):
         )
     
     return None
-
-@router.get("/{movie_id}/stream", response_model=StreamResponse)
-async def stream_movie(movie_id: str, current_user: dict = Depends(get_current_user)):
-    """Get streaming URL for a movie (requires subscription, admin can bypass, free movies open to all)"""
-    db = Database.get_db()
-    
-    # Check if movie exists
-    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id, "is_active": True})
-    if not movie:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Movie not found"
-        )
-    
-    # Admin users can stream without subscription
-    is_admin = current_user.get("is_admin", False)
-    
-    # Check if this is a free movie
-    is_free = movie.get("is_free", False)
-    
-    # Check for subscription (skip for admin and free movies)
-    now = datetime.utcnow()
-    subscription = None
-    
-    if not is_admin and not is_free:
-        # Check if user has active subscription
-        subscription = await db[USER_SUBSCRIPTIONS_COLLECTION].find_one({
-            "user_id": current_user["_id"],
-            "expires_at": {"$gt": now}
-        })
-        
-        if not subscription:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please subscribe to watch this content"
-            )
-    
-    # Generate streaming token
-    stream_token = create_access_token(
-        data={
-            "sub": current_user["_id"],
-            "movie_id": movie_id,
-            "subscription_id": subscription["_id"] if subscription else "admin"
-        },
-        expires_delta=datetime.timedelta(hours=STREAM_TOKEN_EXPIRE_HOURS)
-    )
-    
-    # Get video URL - for admin, return directly; for others get from Firebase
-    video_url = movie.get("video_url", "")
-    if video_url and not is_admin:
-        # Generate signed URL for streaming
-        video_url = firebase_service.get_video_url(movie["video_url"].split("/")[-1])
-    
-    # Set expiry - admin gets 48 hours, subscription users get their subscription expiry
-    if subscription:
-        expires_at = subscription["expires_at"]
-    elif is_free:
-        # Free movies get 24 hour access
-        expires_at = now + datetime.timedelta(hours=FREE_TRIAL_HOURS)
-    else:
-        expires_at = now + datetime.timedelta(hours=STREAM_ACCESS_EXPIRE_HOURS)
-    
-    return {
-        "movie_id": movie_id,
-        "video_url": video_url,
-        "token": stream_token,
-        "expires_at": expires_at
-    }
 
 @router.get("/user/purchases", response_model=List[PurchaseResponse])
 async def get_user_purchases(current_user: dict = Depends(get_current_user)):
