@@ -308,6 +308,22 @@ class SubscriptionResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Comment Schemas
+class CommentCreate(BaseModel):
+    movie_id: str
+    text: str
+
+class CommentResponse(BaseModel):
+    id: str
+    movie_id: str
+    user_id: str
+    username: str
+    text: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # Trending Response
 class TrendingResponse(BaseModel):
     trending_movies: List[MovieResponse]

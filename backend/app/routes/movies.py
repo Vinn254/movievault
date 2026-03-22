@@ -3,13 +3,14 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import uuid
 
-from app.database import Database, MOVIES_COLLECTION, MUSIC_COLLECTION, PURCHASES_COLLECTION, REACTIONS_COLLECTION, SUBSCRIPTIONS_COLLECTION, SUBSCRIPTION_PLANS_COLLECTION, USER_SUBSCRIPTIONS_COLLECTION, SERIES_COLLECTION, SEASONS_COLLECTION, EPISODES_COLLECTION
+from app.database import Database, MOVIES_COLLECTION, MUSIC_COLLECTION, PURCHASES_COLLECTION, REACTIONS_COLLECTION, SUBSCRIPTIONS_COLLECTION, SUBSCRIPTION_PLANS_COLLECTION, USER_SUBSCRIPTIONS_COLLECTION, SERIES_COLLECTION, SEASONS_COLLECTION, EPISODES_COLLECTION, COMMENTS_COLLECTION, USERS_COLLECTION
 from app.schemas import (
     MovieCreate, MovieUpdate, MovieResponse, MovieListResponse,
     StreamResponse, PurchaseResponse, MovieReaction, SubscriptionResponse,
     MusicCreate, MusicUpdate, MusicResponse, MusicListResponse, MusicReaction,
     SeasonCreate, SeasonUpdate, SeasonResponse, EpisodeCreate, EpisodeUpdate, EpisodeResponse,
-    SubscriptionPlanCreate, SubscriptionPlanResponse, UserSubscriptionResponse, TrendingResponse
+    SubscriptionPlanCreate, SubscriptionPlanResponse, UserSubscriptionResponse, TrendingResponse,
+    CommentCreate, CommentResponse
 )
 from app.routes.auth import get_current_user, get_current_admin
 from app.firebase import firebase_service
@@ -1014,6 +1015,97 @@ async def like_movie(reaction: MovieReaction, current_user: dict = Depends(get_c
             )
     
     return {"message": "Reaction updated successfully"}
+
+# ==================== COMMENTS ENDPOINTS ====================
+
+@router.get("/movies/{movie_id}/comments", response_model=List[CommentResponse])
+async def get_movie_comments(movie_id: str):
+    """Get all comments for a movie"""
+    db = Database.get_db()
+    
+    # Check if movie exists
+    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id})
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    
+    # Get comments
+    comments_cursor = db[COMMENTS_COLLECTION].find(
+        {"movie_id": movie_id}
+    ).sort("created_at", -1)
+    comments = await comments_cursor.to_list(length=100)
+    
+    # Get user info for each comment
+    result = []
+    for comment in comments:
+        user = await db[USERS_COLLECTION].find_one({"_id": comment["user_id"]})
+        result.append({
+            "id": comment["_id"],
+            "movie_id": comment["movie_id"],
+            "user_id": comment["user_id"],
+            "username": user.get("username", "Anonymous") if user else "Anonymous",
+            "text": comment["text"],
+            "created_at": comment["created_at"]
+        })
+    
+    return result
+
+@router.post("/movies/{movie_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+async def add_movie_comment(
+    movie_id: str,
+    comment: CommentCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Add a comment to a movie"""
+    db = Database.get_db()
+    user_id = current_user["_id"]
+    
+    # Check if movie exists
+    movie = await db[MOVIES_COLLECTION].find_one({"_id": movie_id})
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    
+    # Create comment
+    comment_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    
+    comment_doc = {
+        "_id": comment_id,
+        "movie_id": movie_id,
+        "user_id": user_id,
+        "text": comment.text,
+        "created_at": now
+    }
+    
+    await db[COMMENTS_COLLECTION].insert_one(comment_doc)
+    
+    return {
+        "id": comment_id,
+        "movie_id": movie_id,
+        "user_id": user_id,
+        "username": current_user.get("username", "Anonymous"),
+        "text": comment.text,
+        "created_at": now
+    }
+
+@router.delete("/comments/{comment_id}")
+async def delete_comment(comment_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a comment (only by the comment owner or admin)"""
+    db = Database.get_db()
+    user_id = current_user["_id"]
+    is_admin = current_user.get("is_admin", False)
+    
+    # Find comment
+    comment = await db[COMMENTS_COLLECTION].find_one({"_id": comment_id})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    # Check if user owns the comment or is admin
+    if comment["user_id"] != user_id and not is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    
+    await db[COMMENTS_COLLECTION].delete_one({"_id": comment_id})
+    
+    return {"message": "Comment deleted successfully"}
 
 @router.post("/subscribe")
 async def subscribe_movie(movie_id: str, current_user: dict = Depends(get_current_user)):
