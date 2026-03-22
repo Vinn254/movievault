@@ -747,8 +747,8 @@ async def create_movie(movie: MovieCreate, current_user: dict = Depends(get_curr
         "views": 0
     }
 
-# Stream route must come BEFORE wildcard /{movie_id} route
-@router.get("/{movie_id}/stream", response_model=StreamResponse)
+# Stream route must come BEFORE wildcard /movies/{movie_id} route
+@router.get("/movies/{movie_id}/stream", response_model=StreamResponse)
 async def stream_movie(movie_id: str, current_user: dict = Depends(get_current_user)):
     """Get streaming URL for a movie (requires subscription, admin can bypass, free movies open to all)"""
     db = Database.get_db()
@@ -817,7 +817,7 @@ async def stream_movie(movie_id: str, current_user: dict = Depends(get_current_u
     }
 
 # Get, Update, Delete movie by ID - must come AFTER stream route
-@router.get("/{movie_id}", response_model=MovieResponse)
+@router.get("/movies/{movie_id}", response_model=MovieResponse)
 async def get_movie(movie_id: str):
     """Get a single movie by ID"""
     db = Database.get_db()
@@ -854,7 +854,7 @@ async def get_movie(movie_id: str):
         "views": movie.get("views", 0) + 1
     }
 
-@router.put("/{movie_id}", response_model=MovieResponse)
+@router.put("/movies/{movie_id}", response_model=MovieResponse)
 async def update_movie(movie_id: str, movie: MovieUpdate):
     """Update a movie (no auth - for testing)"""
     db = Database.get_db()
@@ -894,7 +894,7 @@ async def update_movie(movie_id: str, movie: MovieUpdate):
         "views": updated.get("views", 0)
     }
 
-@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/movies/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_movie(movie_id: str, hard_delete: bool = False):
     """Delete a movie (no auth - for testing) - soft delete by default, hard delete with ?hard_delete=true"""
     db = Database.get_db()
