@@ -19,7 +19,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    window.location.href = '/login';
     setIsMenuOpen(false);
   };
 
